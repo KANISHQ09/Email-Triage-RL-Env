@@ -5,7 +5,7 @@ import gradio as gr
 from env import EmailEnv
 from models import Action, EnvResult
 import uvicorn
-from app import demo # Import the Gradio demo object
+from ui import demo # Import the Gradio demo object
 
 app = FastAPI(title="Email Triage RL Environment - OpenEnv API")
 

@@ -134,11 +134,6 @@ def run_actions(classify_val: str, categorize_val: str, reply_val: str):
 # ── Gradio UI ─────────────────────────────────────────────────────
 with gr.Blocks(
     title="📧 Email Triage RL Environment",
-    theme=gr.themes.Soft(primary_hue="indigo", secondary_hue="blue"),
-    css="""
-    #header { text-align: center; margin-bottom: 10px; }
-    .reward-box { font-size: 1.3em; font-weight: bold; text-align: center; padding: 12px; }
-    """
 ) as demo:
 
     gr.Markdown(
@@ -204,4 +199,10 @@ with gr.Blocks(
 
 
 if __name__ == "__main__":
-    demo.launch()
+    demo.launch(
+        theme=gr.themes.Soft(primary_hue="indigo", secondary_hue="blue"),
+        css="""
+        #header { text-align: center; margin-bottom: 10px; }
+        .reward-box { font-size: 1.3em; font-weight: bold; text-align: center; padding: 12px; }
+        """
+    )
