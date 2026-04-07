@@ -4,10 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "email_env"
-version = "1.0.0"
+version = "1.0.1"
 description = "AI Email Triage RL Environment — OpenEnv compatible."
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 authors = [
     { name = "Kantik09" }
 ]
@@ -19,6 +19,9 @@ dependencies = [
     "fastapi",
     "uvicorn"
 ]
+
+[project.scripts]
+server = "server.app:app"
 
 [project.urls]
 Homepage = "https://huggingface.co/spaces/Kantik09/email-triage-env"
