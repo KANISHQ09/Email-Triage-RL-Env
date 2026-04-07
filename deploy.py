@@ -1,9 +1,9 @@
 """
-deploy.py — Upload email_env to Hugging Face Spaces
+deploy.py — Upload email_env to Hugging Face Spaces (Modern upload_folder version)
 
 Usage:
     python deploy.py --token hf_xxx --username your-hf-username
-    python deploy.py --token hf_xxx --username your-hf-username --space-name email-env
+    python deploy.py --token hf_xxx --username your-hf-username --space-name email-triage-env
 """
 
 import argparse
@@ -11,25 +11,35 @@ import os
 from pathlib import Path
 from huggingface_hub import HfApi, create_repo
 
-# Files to exclude from upload
-EXCLUDE = {
-    "__pycache__", ".git", ".env",
-    "test_api.py", "sanity_test.py", "deploy.py",
-    ".gitignore"
-}
+# Files and directories to ignore during upload
+IGNORE_PATTERNS = [
+    "__pycache__",
+    ".git",
+    ".env",
+    "deploy.py",
+    "*.log",
+    "sanity_out.txt",
+    "test_api_out.txt",
+    "inference_out.txt",
+    "test_output.txt",
+    "venv",
+    ".ipynb_checkpoints"
+]
 
 def deploy(token: str, username: str, space_name: str):
     api = HfApi(token=token)
-
     repo_id = f"{username}/{space_name}"
+    project_dir = Path(__file__).parent.absolute()
+
     print(f"\n[INFO] Deploying to: https://huggingface.co/spaces/{repo_id}")
+    print(f"[INFO] Source directory: {project_dir}")
 
     # 1. Create Space repo (skip if already exists)
     try:
         create_repo(
             repo_id=repo_id,
             repo_type="space",
-            space_sdk="gradio",
+            space_sdk="docker",  # Modified to docker as per README/Dockerfile requirement
             token=token,
             exist_ok=True,
             private=False,
@@ -39,42 +49,28 @@ def deploy(token: str, username: str, space_name: str):
         print(f"[ERROR] Could not create Space: {e}")
         return
 
-    # 2. Collect files to upload
-    project_dir = Path(__file__).parent
-    files_to_upload = []
-
-    for f in project_dir.iterdir():
-        if f.name in EXCLUDE or f.name.startswith("."):
-            continue
-        if f.is_file():
-            files_to_upload.append(f)
-
-    print(f"\n[INFO] Files to upload ({len(files_to_upload)}):")
-    for f in files_to_upload:
-        print(f"       {f.name}  ({f.stat().st_size} bytes)")
-
-    # 3. Upload each file
-    print("\n[INFO] Uploading...")
-    for f in files_to_upload:
-        try:
-            api.upload_file(
-                path_or_fileobj=str(f),
-                path_in_repo=f.name,
-                repo_id=repo_id,
-                repo_type="space",
-                token=token,
-            )
-            print(f"[OK]   Uploaded: {f.name}")
-        except Exception as e:
-            print(f"[FAIL] {f.name}: {e}")
+    # 2. Upload the entire folder
+    print(f"\n[INFO] Syncing folder to Hugging Face...")
+    try:
+        api.upload_folder(
+            folder_path=str(project_dir),
+            repo_id=repo_id,
+            repo_type="space",
+            token=token,
+            ignore_patterns=IGNORE_PATTERNS,
+            delete_patterns=["app.py", "server.py"] # Automatically cleanup obsolete files
+        )
+        print(f"[OK]   Upload complete!")
+    except Exception as e:
+        print(f"[FAIL] Deployment failed: {e}")
+        return
 
     print(f"\n{'='*55}")
-    print(f"  DEPLOYED!")
+    print(f"  DEPLOYED SUCCESSFUL!")
     print(f"  URL: https://huggingface.co/spaces/{repo_id}")
     print(f"{'='*55}")
     print("\nNOTE: The Space may take 1-2 minutes to build.")
-    print("      Add HF_TOKEN as a Secret in Space Settings")
-    print("      to enable LLM auto-fill feature.")
+    print("      Check Logs: https://huggingface.co/spaces/{repo_id}/logs")
 
 
 if __name__ == "__main__":
