@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+ENV/
+env/
+.env
+*.env
+
+# Logs
+*.log
+sanity_out.txt
+traceback.txt
+test_api_out.txt
+inference_out.txt
+test_output.txt
+
+# Project specific
+.DS_Store
+.ipynb_checkpoints/

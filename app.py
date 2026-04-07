@@ -1,8 +1,14 @@
 import os
+import sys
 import gradio as gr
 from env import EmailEnv
 from models import Action
 from tasks import grade_spam, grade_category, grade_reply
+
+# --- Configuration ---
+API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
+MODEL_NAME = os.getenv("MODEL_NAME", "meta-llama/Llama-3.2-1B-Instruct")
+HF_TOKEN = os.getenv("HF_TOKEN")
 
 # ── Global env instance ────────────────────────────────────────────
 env = EmailEnv()
@@ -23,10 +29,10 @@ def try_llm(prompt: str) -> str | None:
     try:
         from openai import OpenAI
         client = OpenAI(
-            base_url=os.getenv("API_BASE_URL", "https://router.huggingface.co/hf-inference/v1"),
+            base_url=API_BASE_URL,
             api_key=token
         )
-        model = os.getenv("MODEL_NAME", "meta-llama/Llama-3.2-1B-Instruct")
+        model = MODEL_NAME
         res = client.chat.completions.create(
             model=model,
             messages=[{"role": "user", "content": prompt}],

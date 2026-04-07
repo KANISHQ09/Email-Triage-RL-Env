@@ -3,6 +3,13 @@ Sanity Test for email_env — no API key required.
 Tests: models, graders, all 3 task types, reward shaping, multi-step logic.
 """
 
+import sys
+import io
+
+# Fix encoding for Windows terminals
+if sys.stdout.encoding != 'utf-8':
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+
 from env import EmailEnv
 from models import Action
 from tasks import grade_spam, grade_category, grade_reply

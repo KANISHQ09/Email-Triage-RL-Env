@@ -1,13 +1,15 @@
 import os
 import re
+import sys
 from openai import OpenAI
 from env import EmailEnv
 from models import Action
 
 # --- Configuration ---
-API_BASE_URL = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
-MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4.1-mini")
+API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
+MODEL_NAME = os.getenv("MODEL_NAME", "meta-llama/Llama-3.2-1B-Instruct")
 HF_TOKEN = os.getenv("HF_TOKEN")
+LOCAL_IMAGE_NAME = os.getenv("LOCAL_IMAGE_NAME") # Optional
 
 if HF_TOKEN is None:
     raise ValueError("HF_TOKEN environment variable is required. Set it before running.")
