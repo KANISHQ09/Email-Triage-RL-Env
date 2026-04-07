@@ -38,3 +38,15 @@ test_output.txt
 # Project specific
 .DS_Store
 .ipynb_checkpoints/
+
+# Whitelist critical files for deployment
+!env.py
+!models.py
+!server/
+!server/__init__.py
+!server/app.py
+!tasks.py
+!emails.py
+!ui.py
+!tasks/
+!tasks/*.py
