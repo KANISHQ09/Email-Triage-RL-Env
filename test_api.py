@@ -1,6 +1,6 @@
 from openai import OpenAI
 
-TOKEN = "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"
+TOKEN = "your hf-token"
 
 # HF router is the new unified endpoint
 ROUTER_BASE = "https://router.huggingface.co/hf-inference/v1"
