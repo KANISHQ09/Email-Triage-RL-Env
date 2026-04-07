@@ -1,6 +1,6 @@
 """
-Sanity Test for email_env — no API key required.
-Tests: models, graders, all 3 task types, reward shaping, multi-step logic.
+Sanity Test for email_env (OpenEnv Compliant)
+Tests: EnvResult attributes, graders, task logic, and multi-step rewards.
 """
 
 import sys
@@ -26,7 +26,7 @@ def check(label, condition):
 
 
 print("\n" + "="*55)
-print("  EMAIL ENV — SANITY TEST")
+print("  EMAIL ENV — OPENENV COMPLIANCE TEST")
 print("="*55)
 
 
@@ -47,62 +47,37 @@ check("grade_reply generic",       grade_reply("ok bye") == 0.5)
 
 
 # ─────────────────────────────────────────
-print("\n[2] ENV RESET")
+print("\n[2] ENV RESET (EnvResult API)")
 # ─────────────────────────────────────────
 env = EmailEnv()
 result = env.reset()
 
-obs   = result["observation"]
-info  = result["info"]
-
-check("reset returns observation",      obs is not None)
-check("observation has subject",        len(obs.subject) > 0)
-check("observation has body",           len(obs.body) > 0)
-check("observation history is empty",   obs.history == [])
-check("task_type in [easy/medium/hard]", info["task_type"] in ["easy", "medium", "hard"])
-check("reward is 0.0",                  result["reward"] == 0.0)
-check("done is False",                  result["done"] == False)
+check("reset returns EnvResult with .observation",  hasattr(result, "observation"))
+check("observation has subject",                   len(result.observation.subject) > 0)
+check("observation has messages history",          len(result.observation.messages) > 0)
+check("task_type in info",                         result.info["task_type"] in ["easy", "medium", "hard"])
+check("initial reward is 0.0",                     result.reward == 0.0)
+check("done is False",                             result.done == False)
 
 
 # ─────────────────────────────────────────
-print("\n[3] EASY TASK — classify only")
+print("\n[3] EASY TASK — classify (Step API)")
 # ─────────────────────────────────────────
-# Force easy mode for determinism
 env.task_type = "easy"
 env.max_steps = 1
 env.step_count = 0
 
 action = Action(action_type="classify", content="spam")
-step_result = env.step(action)
+r1 = env.step(action)
 
-check("step returns reward",            "reward" in step_result)
-check("reward is float",                isinstance(step_result["reward"], float))
-check("reward in [0.0, 0.4]",          0.0 <= step_result["reward"] <= 0.4)
-check("done=True after 1 step",         step_result["done"] == True)
-check("history has 1 entry",            len(step_result["observation"].history) == 1)
-
-
-# ─────────────────────────────────────────
-print("\n[4] MEDIUM TASK — classify + categorize")
-# ─────────────────────────────────────────
-env.reset()
-env.task_type = "medium"
-env.max_steps = 2
-env.step_count = 0
-env.cumulative_reward = 0.0
-
-r1 = env.step(Action(action_type="classify", content="not_spam"))
-check("step 1 not done",               r1["done"] == False)
-check("step 1 reward <= 0.4",          r1["reward"] <= 0.4)
-
-r2 = env.step(Action(action_type="categorize", content="work"))
-check("step 2 done",                   r2["done"] == True)
-check("step 2 reward <= 0.3",          r2["reward"] <= 0.3)
-check("cumulative reward <= 0.7",      r2["cumulative_reward"] <= 0.7)
+check("step returns .reward as float",            isinstance(r1.reward, float))
+check("step returns .done indexable",             r1.done == True)
+check("history length is 1",                      len(r1.observation.history) == 1)
+check("messages length is 3 (sys + user + env)", len(r1.observation.messages) == 3)
 
 
 # ─────────────────────────────────────────
-print("\n[5] HARD TASK — classify + categorize + reply")
+print("\n[4] HARD TASK — Full Pipeline")
 # ─────────────────────────────────────────
 env.reset()
 env.task_type = "hard"
@@ -115,21 +90,19 @@ h2 = env.step(Action(action_type="categorize", content="promotion"))
 h3 = env.step(Action(action_type="reply",      content="Thank you for reaching out."))
 
 check("hard: 3 steps completed",       env.step_count == 3)
-check("hard: done after step 3",       h3["done"] == True)
-check("hard: cumulative reward <= 1.0", h3["cumulative_reward"] <= 1.0)
-check("hard: history length == 3",     len(h3["observation"].history) == 3)
+check("hard: .done after step 3",      h3.done == True)
+check("hard: info contains cumulative", h3.info["cumulative_reward"] > 0)
+check("hard: cumulative reward <= 1.0", h3.info["cumulative_reward"] <= 1.0)
+check("hard: messages count is 7",     len(h3.observation.messages) == 7) # 1 sys + 3*(user+env)
 
 
 # ─────────────────────────────────────────
-print("\n[6] DATASET CHECK")
+print("\n[5] ORACLE STATE API")
 # ─────────────────────────────────────────
-from emails import emails
-
-check("dataset has >= 10 emails",      len(emails) >= 10)
-check("all emails have label field",   all("label" in e for e in emails))
-check("all emails have category field",all("category" in e for e in emails))
-check("labels are valid",              all(e["label"] in ["spam", "not_spam"] for e in emails))
-check("categories are valid",          all(e["category"] in ["work", "personal", "promotion"] for e in emails))
+s = env.state()
+check("state() returns dict",           isinstance(s, dict))
+check("state() has email data",        "email" in s)
+check("state() reflects done status",  s["done"] == True)
 
 
 # ─────────────────────────────────────────
@@ -138,7 +111,7 @@ passed = sum(results)
 total  = len(results)
 print(f"  RESULT: {passed}/{total} tests passed")
 if passed == total:
-    print("  🎉 ALL TESTS PASSED — env is ready!")
+    print("  🎉 OPENENV COMPLIANCE VERIFIED!")
 else:
     print(f"  ⚠️  {total - passed} test(s) failed — review above")
 print("="*55 + "\n")

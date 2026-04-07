@@ -7,12 +7,12 @@ from tasks import grade_spam, grade_category, grade_reply
 
 # --- Configuration ---
 API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
-MODEL_NAME = os.getenv("MODEL_NAME", "meta-llama/Llama-3.2-1B-Instruct")
+MODEL_NAME = os.getenv("MODEL_NAME", "meta-llama/Llama-3.1-8B-Instruct")
 HF_TOKEN = os.getenv("HF_TOKEN")
 
 # ── Global env instance ────────────────────────────────────────────
 env = EmailEnv()
-current_result = {}
+current_result = None
 
 TASK_LABELS = {
     "easy":   "🟢 Easy   — Spam Detection",
@@ -32,9 +32,8 @@ def try_llm(prompt: str) -> str | None:
             base_url=API_BASE_URL,
             api_key=token
         )
-        model = MODEL_NAME
         res = client.chat.completions.create(
-            model=model,
+            model=MODEL_NAME,
             messages=[{"role": "user", "content": prompt}],
             max_tokens=100
         )
@@ -48,16 +47,11 @@ def load_email(task_mode: str):
     global current_result, env
 
     env = EmailEnv()
-    r = env.reset()
-
-    # Override task if user selected manually
     if task_mode != "random":
         env.task_type = task_mode
-        env.max_steps = len(env.TASK_STEPS[task_mode])
-        env.step_count = 0
-        env.cumulative_reward = 0.0
-
-    obs = r["observation"]
+    
+    r = env.reset()
+    obs = r.observation
     task = env.task_type
     current_result = r
 
@@ -84,7 +78,7 @@ def load_email(task_mode: str):
 def run_actions(classify_val: str, categorize_val: str, reply_val: str):
     global current_result, env
 
-    if not current_result:
+    if current_result is None:
         return "⚠️ Load an email first.", "**Total Reward:** 0.00"
 
     task = env.task_type
@@ -98,7 +92,7 @@ def run_actions(classify_val: str, categorize_val: str, reply_val: str):
     }
 
     # If LLM is available and fields are empty, use LLM
-    obs = current_result["observation"]
+    obs = current_result.observation
     for action_type in steps_needed:
         if not inputs[action_type]:
             if action_type == "classify":
@@ -108,19 +102,20 @@ def run_actions(classify_val: str, categorize_val: str, reply_val: str):
             else:
                 prompt = f"Write a brief professional reply to:\nSubject: {obs.subject}\nBody: {obs.body}"
             llm_resp = try_llm(prompt)
-            inputs[action_type] = llm_resp if llm_resp else f"[No HF_TOKEN — enter manually]"
+            if llm_resp:
+                inputs[action_type] = llm_resp
 
     for action_type in steps_needed:
         content = inputs[action_type]
-        if not content or "[No HF_TOKEN" in content:
-            log_lines.append(f"⚠️ **{action_type}**: No value provided. Enter it manually or set HF_TOKEN.")
+        if not content:
+            log_lines.append(f"⚠️ **{action_type}**: No value provided.")
             continue
 
         action = Action(action_type=action_type, content=content)
         result = env.step(action)
-        reward = result["reward"]
-        cumulative = result["cumulative_reward"]
-        done = result["done"]
+        reward = result.reward
+        cumulative = result.info.get("cumulative_reward", 0.0)
+        done = result.done
 
         status = "✅" if reward > 0 else "❌"
         log_lines.append(
