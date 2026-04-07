@@ -16,4 +16,5 @@ COPY . .
 ENV API_BASE_URL=https://api.openai.com/v1
 ENV MODEL_NAME=gpt-4.1-mini
 
-CMD ["python", "inference.py"]
+# Default environment server for OpenEnv
+CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "7860"]

@@ -2,3 +2,5 @@ openenv-core
 pydantic
 openai
 gradio>=5.0.0
+fastapi
+uvicorn
