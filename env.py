@@ -71,6 +71,7 @@ class EmailEnv:
         # PER USER REQUEST: [STEP] rewards are per-step normalized rewards, not comparison-based
         # We also track the specific outcome category for the trajectory grader
         outcome = "partial" # default
+        step_reward = 0.50  # Safety default to prevent 0 or undefined
         
         is_spam = self.current_email["label"] == "spam"
         

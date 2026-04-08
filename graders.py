@@ -92,11 +92,12 @@ def GradeEpisode(state_data: dict) -> dict:
     final_score = base_avg - penalties + bonuses
     final_score = max(0.01, min(0.99, final_score))
 
+    # All metrics must be strictly in (0, 1) — never exactly 0.0 or 1.0!
     return {
-        "cost": round(max(0.01, 1.0 - (step_count / 10.0)), 4),
+        "cost": round(max(0.01, min(0.99, 1.0 - (step_count / 10.0))), 4),
         "temperature": 0.5,
         "grid_response": 0.9,
-        "batch_deadlines": 1.0,
+        "batch_deadlines": 0.99,  # MUST NOT BE 1.0
         "carbon": 0.05,
         "final_score": round(final_score, 4)
     }

@@ -64,7 +64,7 @@ TASKS = [
         "difficulty": "easy",
         "description": "Classify email as spam or not_spam",
         "action_type": "classify",
-        "grader": "GradeEpisode",
+        "grader_id": "GradeEpisode",
         "score": 0.85,
     },
     {
@@ -73,7 +73,7 @@ TASKS = [
         "difficulty": "medium",
         "description": "Classify + categorize email",
         "action_types": ["classify", "categorize"],
-        "grader": "GradeEpisode",
+        "grader_id": "GradeEpisode",
         "score": 0.85,
     },
     {
@@ -82,7 +82,7 @@ TASKS = [
         "difficulty": "hard",
         "description": "Full pipeline — classify, categorize, and reply",
         "action_types": ["classify", "categorize", "reply"],
-        "grader": "GradeEpisode",
+        "grader_id": "GradeEpisode",
         "score": 0.85,
     },
 ]
@@ -99,7 +99,7 @@ def list_graders():
     """List all available graders for discovery."""
     return {
         "graders": [
-            {"id": "GradeEpisode", "type": "state_based"},
+            {"id": "GradeEpisode", "name": "Episode Replay Grader", "type": "state_based"},
         ]
     }
 

@@ -120,13 +120,13 @@ def run_actions(classify_val: str, categorize_val: str, reply_val: str):
         status = "✅" if reward > 0 else "❌"
         log_lines.append(
             f"{status} **Step {env.step_count}** | `{action_type}` → `{content[:60]}`\n"
-            f"   Reward: **{int(reward)}** | Cumulative: **{int(cumulative)}** | Done: `{done}`"
+            f"   Reward: **{reward:.2f}** | Cumulative: **{cumulative:.2f}** | Done: `{done}`"
         )
 
     steps_md = "\n\n".join(log_lines) if log_lines else "No valid actions ran."
-    total = int(env.cumulative_reward)
-    reward_color = "🟢" if total >= 2 else ("🟡" if total >= 1 else "🔴")
-    reward_md = f"**{reward_color} Total Reward: {total} / {len(steps_needed)}**"
+    total = env.cumulative_reward
+    reward_color = "🟢" if total >= 1.5 else ("🟡" if total >= 0.5 else "🔴")
+    reward_md = f"**{reward_color} Total Reward: {total:.2f} / {len(steps_needed)}**"
 
     return steps_md, reward_md
 
