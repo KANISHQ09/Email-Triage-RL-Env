@@ -4,58 +4,55 @@ version: "1.0"
 author: your-username
 
 tasks:
-  - id: "easy"
-    name: "spam_detection"
+  - id: "spam_detection"
+    name: "Spam Detection"
     difficulty: "easy"
     description: "Classify email as spam or not_spam"
     action_type: "classify"
-    grader: "easy_grader"
-    grader_type: "deterministic"
+    grader: "tasks.grade_spam"
     max_steps: 1
 
-  - id: "medium"
-    name: "category_classification"
+  - id: "category_classification"
+    name: "Category Classification"
     difficulty: "medium"
     description: "Classify + categorize email"
     action_types: ["classify", "categorize"]
-    grader: "medium_grader"
-    grader_type: "deterministic"
+    grader: "tasks.grade_category"
     max_steps: 2
 
-  - id: "hard"
-    name: "full_decision"
+  - id: "full_decision"
+    name: "Full Decision"
     difficulty: "hard"
     description: "Full pipeline — classify, categorize, and reply"
     action_types: ["classify", "categorize", "reply"]
-    grader: "hard_grader"
-    grader_type: "deterministic"
+    grader: "tasks.grade_reply"
     max_steps: 3
 
 graders:
-  - id: "easy_grader"
-    name: "Easy Grader"
+  - id: "tasks.grade_spam"
+    name: "Spam Grader"
     type: "deterministic"
-    task_id: "easy"
-  - id: "medium_grader"
-    name: "Medium Grader"
+    task_id: "spam_detection"
+  - id: "tasks.grade_category"
+    name: "Category Grader"
     type: "deterministic"
-    task_id: "medium"
-  - id: "hard_grader"
-    name: "Hard Grader"
+    task_id: "category_classification"
+  - id: "tasks.grade_reply"
+    name: "Reply Grader"
     type: "deterministic"
-    task_id: "hard"
+    task_id: "full_decision"
 
 metrics:
   - name: "score"
     type: "float"
-    range: [0.0, 1.0]
+    range: [0.01, 0.99]
 
 environment:
   entry_point: env:EmailEnv
   observation_type: structured
   action_space: [classify, categorize, reply]
   max_steps: 3
-  reward_range: [0.0, 1.0]
+  reward_range: [0.01, 0.99]
 
 inference:
   entry_point: inference:main

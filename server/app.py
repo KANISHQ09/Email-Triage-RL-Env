@@ -59,7 +59,8 @@ def get_state():
 
 TASKS = [
     {
-        "name": "spam_detection",
+        "id": "spam_detection",
+        "name": "Spam Detection",
         "difficulty": "easy",
         "description": "Classify email as spam or not_spam",
         "action_type": "classify",
@@ -67,7 +68,8 @@ TASKS = [
         "score": 0.4,
     },
     {
-        "name": "category_classification",
+        "id": "category_classification",
+        "name": "Category Classification",
         "difficulty": "medium",
         "description": "Classify + categorize email (work / personal / promotion)",
         "action_types": ["classify", "categorize"],
@@ -75,7 +77,8 @@ TASKS = [
         "score": 0.7,
     },
     {
-        "name": "full_decision",
+        "id": "full_decision",
+        "name": "Full Decision",
         "difficulty": "hard",
         "description": "Full pipeline — classify, categorize, and reply",
         "action_types": ["classify", "categorize", "reply"],

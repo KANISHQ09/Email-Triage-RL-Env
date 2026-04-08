@@ -32,8 +32,7 @@ class EmailEnv:
         self.step_count = 0
         self.max_steps = 3
         self.task_type = "easy"
-        self.cumulative_reward = 0.0
-
+        self.cumulative_reward = 0.01
     def reset(self):
         """Standard OpenEnv Reset: Returns EnvResult."""
         self.current_email = random.choice(emails)
@@ -44,7 +43,7 @@ class EmailEnv:
         self.step_count = 0
         self.task_type = random.choice(["easy", "medium", "hard"])
         self.max_steps = len(self.TASK_STEPS[self.task_type])
-        self.cumulative_reward = 0.0
+        self.cumulative_reward = 0.01
 
         obs = Observation(
             email_id=self.current_email["id"],
@@ -56,7 +55,7 @@ class EmailEnv:
         )
         return EnvResult(
             observation=obs,
-            reward=0.0,
+            reward=0.01,
             done=False,
             info={
                 "task_type": self.task_type,
@@ -78,7 +77,9 @@ class EmailEnv:
         elif action.action_type == "reply":
             reward += grade_reply(action.content)
 
-        self.cumulative_reward += reward
+        # Clamp reward to strict (0, 1) range
+        reward = max(0.01, min(0.99, float(reward)))
+        self.cumulative_reward = max(0.01, min(0.99, self.cumulative_reward + reward))
         self.step_count += 1
         
         # Track history for context
