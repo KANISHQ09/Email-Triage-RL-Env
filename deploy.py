@@ -75,7 +75,7 @@ def deploy(token: str, username: str, space_name: str):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Deploy email_env to HF Spaces")
-    parser.add_argument("--token",      required=True,              help="HuggingFace WRITE token (hf_xxx)")
+    parser.add_argument("--token",      default=None,               help="HuggingFace WRITE token (hf_xxx) (Optional if logged in via CLI)")
     parser.add_argument("--username",   required=True,              help="Your HuggingFace username")
     parser.add_argument("--space-name", default="email-triage-env", help="Space name (default: email-triage-env)")
     args = parser.parse_args()

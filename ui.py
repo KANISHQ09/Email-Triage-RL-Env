@@ -70,7 +70,7 @@ def load_email(task_mode: str):
         "",    # classify input
         "",    # categorize input
         "",    # reply input
-        "**Total Reward:** 0.00",
+        "**Total Reward:** 0",
     )
 
 
@@ -120,13 +120,13 @@ def run_actions(classify_val: str, categorize_val: str, reply_val: str):
         status = "✅" if reward > 0 else "❌"
         log_lines.append(
             f"{status} **Step {env.step_count}** | `{action_type}` → `{content[:60]}`\n"
-            f"   Reward: **{reward:.2f}** | Cumulative: **{cumulative:.2f}** | Done: `{done}`"
+            f"   Reward: **{int(reward)}** | Cumulative: **{int(cumulative)}** | Done: `{done}`"
         )
 
     steps_md = "\n\n".join(log_lines) if log_lines else "No valid actions ran."
-    total = round(env.cumulative_reward, 2)
-    reward_color = "🟢" if total >= 0.7 else ("🟡" if total >= 0.4 else "🔴")
-    reward_md = f"**{reward_color} Total Reward: {total:.2f} / {sum([0.4, 0.3, 0.3][:len(steps_needed)]):.1f}**"
+    total = int(env.cumulative_reward)
+    reward_color = "🟢" if total >= 2 else ("🟡" if total >= 1 else "🔴")
+    reward_md = f"**{reward_color} Total Reward: {total} / {len(steps_needed)}**"
 
     return steps_md, reward_md
 
@@ -171,17 +171,17 @@ with gr.Blocks(
             run_btn = gr.Button("▶️ Run Actions", variant="primary")
 
     steps_box  = gr.Markdown("", label="📊 Step Log")
-    reward_box = gr.Markdown("**Total Reward:** 0.00", elem_classes=["reward-box"])
+    reward_box = gr.Markdown("**Total Reward:** 0", elem_classes=["reward-box"])
 
     gr.Markdown("""---
-### 🏆 Reward Design
-| Action | Correct | Partial | Wrong |
-|---|---|---|---|
-| `classify` | +0.40 | — | 0.00 |
-| `categorize` | +0.30 | +0.15 | 0.00 |
-| `reply` | +0.30 | +0.15 | — |
+### 🏆 Task Evaluation
+| Task (`Action`) | Correct | Wrong |
+|---|---|---|
+| Spam Detection (`classify`) | +1 | 0 |
+| Categorization (`categorize`) | +1 | 0 |
+| Professional Reply (`reply`) | +1 | 0 |
 
-**Max reward = 1.0** &nbsp;|&nbsp; Built with [OpenEnv](https://github.com/openenv)
+**Max reward = 3 (for hard tasks)** &nbsp;|&nbsp; Built with [OpenEnv](https://github.com/openenv)
 """)
 
     # Wire up events

@@ -38,12 +38,12 @@ check("grade_spam wrong",          grade_spam("not_spam", "spam") == 0.0)
 check("grade_spam case-insensitive", grade_spam("SPAM", "spam") == 1.0)
 
 check("grade_category correct",    grade_category("work", "work") == 1.0)
-check("grade_category partial",    grade_category("personal", "work") == 0.5)
+check("grade_category wrong",      grade_category("personal", "work") == 0.0)
 check("grade_category invalid",    grade_category("gibberish", "work") == 0.0)
 
 check("grade_reply high quality",  grade_reply("Thank you, I'll handle it.") == 1.0)
 check("grade_reply noted keyword", grade_reply("Noted, will do.") == 1.0)
-check("grade_reply generic",       grade_reply("ok bye") == 0.5)
+check("grade_reply generic",       grade_reply("ok bye") == 0.0)
 
 
 # ─────────────────────────────────────────
@@ -92,7 +92,7 @@ h3 = env.step(Action(action_type="reply",      content="Thank you for reaching o
 check("hard: 3 steps completed",       env.step_count == 3)
 check("hard: .done after step 3",      h3.done == True)
 check("hard: info contains cumulative", h3.info["cumulative_reward"] > 0)
-check("hard: cumulative reward <= 1.0", h3.info["cumulative_reward"] <= 1.0)
+check("hard: cumulative reward <= 3.0", h3.info["cumulative_reward"] <= 3.0)
 check("hard: messages count is 7",     len(h3.observation.messages) == 7) # 1 sys + 3*(user+env)
 
 

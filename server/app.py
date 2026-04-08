@@ -27,7 +27,7 @@ def health():
 @app.get("/")
 def root_redirect():
     """Redirect human visitors to the UI."""
-    return RedirectResponse(url="/ui")
+    return RedirectResponse(url="./ui/")
 
 # Support both GET and POST for reset to prevent "Method Not Allowed" during diagnostic checks
 @app.api_route("/reset", methods=["GET", "POST"])
@@ -57,7 +57,7 @@ app = gr.mount_gradio_app(app, demo, path="/ui")
 def main():
     """Entry point for openenv multi-mode deployment."""
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=7860)
+    uvicorn.run(app, host="0.0.0.0", port=7860, proxy_headers=True, forwarded_allow_ips="*")
 
 if __name__ == "__main__":
     main()

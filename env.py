@@ -68,15 +68,15 @@ class EmailEnv:
         """Standard OpenEnv Step: Returns EnvResult."""
         reward = 0.0
 
-        # --- Weighted reward shaping ---
+        # --- Strict binary reward per action ---
         if action.action_type == "classify":
-            reward += 0.4 * grade_spam(action.content, self.current_email["label"])
+            reward += grade_spam(action.content, self.current_email["label"])
 
         elif action.action_type == "categorize":
-            reward += 0.3 * grade_category(action.content, self.current_email["category"])
+            reward += grade_category(action.content, self.current_email["category"])
 
         elif action.action_type == "reply":
-            reward += 0.3 * grade_reply(action.content)
+            reward += grade_reply(action.content)
 
         self.cumulative_reward += reward
         self.step_count += 1

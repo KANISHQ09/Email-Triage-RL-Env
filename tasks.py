@@ -1,33 +1,28 @@
-def grade_spam(pred: str, actual: str) -> float:
-    """Grade spam classification. Returns 1.0 for correct, 0.0 for incorrect."""
+def grade_spam(pred: str, actual: str) -> int:
+    """Grade spam classification. Returns 1 for correct, 0 for incorrect."""
     pred = pred.strip().lower()
     actual = actual.strip().lower()
-    return 1.0 if pred == actual else 0.0
+    return 1 if pred == actual else 0
 
 
-def grade_category(pred: str, actual: str) -> float:
+def grade_category(pred: str, actual: str) -> int:
     """
     Grade category classification.
-    - Correct match: 1.0
-    - Valid category but wrong: 0.5
-    - Invalid category: 0.0
+    - Correct match: 1
+    - Wrong or invalid: 0
     """
     pred = pred.strip().lower()
     actual = actual.strip().lower()
-    valid_categories = {"work", "personal", "promotion"}
-
     if pred == actual:
-        return 1.0
-    elif pred in valid_categories:
-        return 0.5
-    return 0.0
+        return 1
+    return 0
 
 
-def grade_reply(reply: str) -> float:
+def grade_reply(reply: str) -> int:
     """
     Grade reply quality.
-    - Contains professional acknowledgment keywords: 1.0
-    - General response: 0.5
+    - Contains professional acknowledgment keywords: 1
+    - General/wrong response: 0
     """
     reply = reply.lower()
     high_quality_keywords = [
@@ -36,5 +31,5 @@ def grade_reply(reply: str) -> float:
     ]
     for keyword in high_quality_keywords:
         if keyword in reply:
-            return 1.0
-    return 0.5
+            return 1
+    return 0
