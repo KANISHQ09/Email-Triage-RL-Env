@@ -1,11 +1,14 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from typing import Optional
 import gradio as gr
 from env import EmailEnv
 from models import Action, EnvResult
+from tasks import grade_spam, grade_category, grade_reply
 import uvicorn
-from ui import demo # Import the Gradio demo object
+from ui import demo  # Import the Gradio demo object
 
 app = FastAPI(title="Email Triage RL Environment - OpenEnv API")
 
@@ -50,6 +53,72 @@ def step(action: Action = None, request: Request = None):
 def get_state():
     """Standard OpenEnv State Endpoint."""
     return env.state()
+
+
+# ── Task & Grader Discovery ──────────────────────────────────────────────────
+
+TASKS = [
+    {
+        "name": "spam_detection",
+        "difficulty": "easy",
+        "description": "Classify email as spam or not_spam",
+        "action_type": "classify",
+        "grader": "tasks.grade_spam",
+        "score": 0.4,
+    },
+    {
+        "name": "category_classification",
+        "difficulty": "medium",
+        "description": "Classify + categorize email (work / personal / promotion)",
+        "action_types": ["classify", "categorize"],
+        "grader": "tasks.grade_category",
+        "score": 0.7,
+    },
+    {
+        "name": "full_decision",
+        "difficulty": "hard",
+        "description": "Full pipeline — classify, categorize, and reply",
+        "action_types": ["classify", "categorize", "reply"],
+        "grader": "tasks.grade_reply",
+        "score": 0.99,
+    },
+]
+
+
+@app.get("/tasks")
+def list_tasks():
+    """List all available tasks with their grader definitions."""
+    return {"tasks": TASKS}
+
+
+class GradeRequest(BaseModel):
+    task_name: str
+    prediction: str
+    ground_truth: Optional[str] = ""
+
+
+@app.post("/grade")
+def grade(request: GradeRequest):
+    """
+    Run the grader for a given task and return a score strictly in (0, 1).
+    Scores are always in the open interval — never 0.0 or 1.0.
+    """
+    task_name = request.task_name
+    prediction = request.prediction
+    ground_truth = request.ground_truth
+
+    if task_name == "spam_detection":
+        score = grade_spam(prediction, ground_truth)
+    elif task_name == "category_classification":
+        score = grade_category(prediction, ground_truth)
+    elif task_name == "full_decision":
+        score = grade_reply(prediction)
+    else:
+        return {"error": f"Unknown task: {task_name}", "score": None}
+
+    # Clamp to strict open interval (0, 1) — never exactly 0.0 or 1.0
+    score = max(0.01, min(0.99, float(score)))
+    return {"task": task_name, "score": score}
 
 # Mount the Gradio UI at /ui to avoid route collision with the REST API at root
 app = gr.mount_gradio_app(app, demo, path="/ui")
