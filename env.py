@@ -113,8 +113,8 @@ class EmailEnv:
         self.cumulative_reward += step_reward
         self.step_count += 1
         
-        # Ensure total never exceeds 0.99
-        self.cumulative_reward = min(0.99, self.cumulative_reward)
+        # Internal cumulative reward remains unclamped for UI display
+        # Only the 'score' for the validator will be normalized to (0, 1)
         
         # Track history for context
         self.history.append(f"[{action.action_type}] {action.content}")
