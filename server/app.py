@@ -63,8 +63,8 @@ TASKS = [
         "name": "Spam Detection",
         "difficulty": "easy",
         "description": "Classify email as spam or not_spam",
-        "action_type": "classify",
-        "grader_id": "GradeEpisode",
+        "action_types": ["classify"],
+        "grader": "GradeEpisode",
         "score": 0.85,
     },
     {
@@ -73,7 +73,7 @@ TASKS = [
         "difficulty": "medium",
         "description": "Classify + categorize email",
         "action_types": ["classify", "categorize"],
-        "grader_id": "GradeEpisode",
+        "grader": "GradeEpisode",
         "score": 0.85,
     },
     {
@@ -82,7 +82,7 @@ TASKS = [
         "difficulty": "hard",
         "description": "Full pipeline — classify, categorize, and reply",
         "action_types": ["classify", "categorize", "reply"],
-        "grader_id": "GradeEpisode",
+        "grader": "GradeEpisode",
         "score": 0.85,
     },
 ]

@@ -8,7 +8,7 @@ tasks:
     name: "Spam Detection"
     difficulty: "easy"
     description: "Classify email as spam or not_spam. WARNING: Catastrophic penalty (-0.40) for approving Phishing emails."
-    grader_id: "GradeEpisode"
+    grader: "GradeEpisode"
     reward_range: [0.01, 0.99]
     metrics:
       - id: "score"
@@ -20,7 +20,7 @@ tasks:
     name: "Category Classification"
     difficulty: "medium"
     description: "Classify + categorize email. Bonuses for consistency (+0.10) and perfect detail mapping."
-    grader_id: "GradeEpisode"
+    grader: "GradeEpisode"
     reward_range: [0.01, 0.99]
     metrics:
       - id: "score"
@@ -32,7 +32,7 @@ tasks:
     name: "Full Decision"
     difficulty: "hard"
     description: "Full pipeline — classify, categorize, and reply. Max bonus for consistency (+0.15) and explanation (+0.04)."
-    grader_id: "GradeEpisode"
+    grader: "GradeEpisode"
     reward_range: [0.01, 0.99]
     metrics:
       - id: "score"

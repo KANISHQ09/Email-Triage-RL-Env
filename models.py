@@ -24,7 +24,7 @@ class Observation(BaseModel):
 
 class EnvResult(BaseModel):
     observation: Observation
-    reward: float = 0.0
+    reward: float = 0.01  # Use 0.01 instead of 0.0 to satisfy strict validator range (0, 1)
     done: bool = False
     info: dict = {}
 

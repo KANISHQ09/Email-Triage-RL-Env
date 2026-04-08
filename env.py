@@ -151,7 +151,7 @@ class EmailEnv:
 
         return EnvResult(
             observation=obs,
-            reward=round(step_reward, 4),
+            reward=max(0.01, min(0.99, round(step_reward, 4))),
             done=self.done,
             info=info_dict
         )
