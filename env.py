@@ -97,15 +97,28 @@ class EmailEnv:
             history=self.history
         )
 
+        # 1. Setup the default info dictionary
+        info_dict = {
+            "step": self.step_count,
+            "task_type": self.task_type,
+            "cumulative_reward": round(self.cumulative_reward, 4)
+        }
+
+        # 2. THE FIX: When the episode ends, calculate and inject the final normalized 'score'
+        if self.done:
+            # Divide by max_steps to normalize the cumulative reward 
+            raw_score = self.cumulative_reward / self.max_steps
+            # Force the score to be strictly between 0 and 1 (e.g., 0.01 to 0.99)
+            final_score = max(0.01, min(0.99, raw_score))
+            
+            # OpenEnv requires this exact key to validate the task score
+            info_dict["score"] = round(final_score, 4)
+
         return EnvResult(
             observation=obs,
             reward=round(reward, 4),
             done=self.done,
-            info={
-                "step": self.step_count,
-                "task_type": self.task_type,
-                "cumulative_reward": round(self.cumulative_reward, 4)
-            }
+            info=info_dict # 3. Return the updated info_dict
         )
 
     def state(self):
