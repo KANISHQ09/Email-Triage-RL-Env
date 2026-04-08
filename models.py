@@ -35,4 +35,4 @@ class EpisodeGrade(BaseModel):
     grid_response: float
     batch_deadlines: float
     carbon: float
-    final_score: float
+    score: float       # Renamed from final_score to match manifest metric ID

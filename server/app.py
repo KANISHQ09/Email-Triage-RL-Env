@@ -64,7 +64,7 @@ TASKS = [
         "difficulty": "easy",
         "description": "Classify email as spam or not_spam",
         "action_types": ["classify"],
-        "grader": "GradeEpisode",
+        "grader": "GradeSpam",
         "score": 0.85,
     },
     {
@@ -73,7 +73,7 @@ TASKS = [
         "difficulty": "medium",
         "description": "Classify + categorize email",
         "action_types": ["classify", "categorize"],
-        "grader": "GradeEpisode",
+        "grader": "GradeCategory",
         "score": 0.85,
     },
     {
@@ -82,7 +82,7 @@ TASKS = [
         "difficulty": "hard",
         "description": "Full pipeline — classify, categorize, and reply",
         "action_types": ["classify", "categorize", "reply"],
-        "grader": "GradeEpisode",
+        "grader": "GradeFull",
         "score": 0.85,
     },
 ]
@@ -99,7 +99,9 @@ def list_graders():
     """List all available graders for discovery."""
     return {
         "graders": [
-            {"id": "GradeEpisode", "name": "Episode Replay Grader", "type": "state_based"},
+            {"id": "GradeSpam",     "name": "Spam Detection Grader", "type": "state_based"},
+            {"id": "GradeCategory", "name": "Category Grader",       "type": "state_based"},
+            {"id": "GradeFull",     "name": "Full Pipeline Grader", "type": "state_based"},
         ]
     }
 
@@ -108,8 +110,10 @@ def list_graders():
 def grade_episode(state_data: dict):
     """
     Grades an episode based on the full state/replay data.
+    Ensures 'score' is returned for manifest compliance.
     """
     grade_dict = GradeEpisode(state_data)
+    # The models handle the rename of final_score -> score
     return EpisodeGrade(**grade_dict)
 
 # Mount the Gradio UI at /ui to avoid route collision with the REST API at root

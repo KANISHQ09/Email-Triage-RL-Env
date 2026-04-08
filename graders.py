@@ -99,5 +99,5 @@ def GradeEpisode(state_data: dict) -> dict:
         "grid_response":   0.9,
         "batch_deadlines": 0.99,
         "carbon":          0.05,
-        "final_score":     round(max(0.01, min(0.99, final_score)), 4)
+        "score":           round(max(0.01, min(0.99, final_score)), 4) # Renamed to score
     }

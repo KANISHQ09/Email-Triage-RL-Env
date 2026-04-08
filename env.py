@@ -147,7 +147,7 @@ class EmailEnv:
             final_score = max(0.01, min(0.99, raw_score))
             
             # OpenEnv requires this exact key to validate the task score
-            info_dict["score"] = round(final_score, 4)
+            info_dict["score"] = round(final_score, 4) # Renamed to score
 
         return EnvResult(
             observation=obs,

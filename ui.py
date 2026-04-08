@@ -126,7 +126,10 @@ def run_actions(classify_val: str, categorize_val: str, reply_val: str):
     steps_md = "\n\n".join(log_lines) if log_lines else "No valid actions ran."
     total = env.cumulative_reward
     reward_color = "🟢" if total >= 1.5 else ("🟡" if total >= 0.5 else "🔴")
-    reward_md = f"**{reward_color} Total Reward: {total:.2f} / {len(steps_needed)}**"
+    
+    # Per-task reward display
+    task_label = TASK_LABELS[task].split("—")[1].strip()
+    reward_md = f"**{reward_color} {task_label} Reward: {total:.2f} / {len(steps_needed)}**"
 
     return steps_md, reward_md
 
