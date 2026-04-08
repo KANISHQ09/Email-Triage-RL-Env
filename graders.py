@@ -1,103 +1,76 @@
-def grade_spam_task(pred: str, actual: str) -> float:
-    """Grade spam classification. Returns 0.85 for correct, 0.15 for incorrect."""
-    pred = pred.strip().lower()
-    actual = actual.strip().lower()
-    return 0.85 if pred == actual else 0.15
+# graders.py
+# Reference-based grading logic for Email Triage Environment.
+# All scores are strictly in (0.01, 0.99) with 3-decimal precision.
 
-
-def grade_category_task(pred: str, actual: str) -> float:
+def GradeEpisode(state: dict) -> dict:
     """
-    Grade category classification.
-    Returns 0.85 for correct, 0.15 for incorrect.
+    Main router for state-based grading.
+    Returns a dictionary of metrics strictly in (0.01, 0.99).
     """
-    pred = pred.strip().lower()
-    actual = actual.strip().lower()
-    if pred == actual:
-        return 0.85
-    return 0.15
-
-
-def grade_reply_task(reply: str) -> float:
-    """
-    Grade reply quality.
-    Returns 0.85 for correct, 0.15 for incorrect.
-    """
-    reply = reply.lower()
-    high_quality_keywords = [
-        "thank", "noted", "understood", "received", "acknowledged",
-        "will do", "on it", "i'll", "i will", "sure", "happy to"
-    ]
-    for keyword in high_quality_keywords:
-        if keyword in reply:
-            return 0.85
-    return 0.15
-
-
-def GradeEpisode(state_data: dict) -> dict:
-    """
-    Grades an entire episode based on the state/replay data.
-    Implements trajectory modifiers: Penalties and Bonuses.
-    """
-    outcomes = state_data.get("step_outcomes", [])
-    task_type = state_data.get("task_type", "easy")
-    step_count = state_data.get("step_count", 0)
-
-    # 1. Base Score calculation (Average of per-step rewards)
-    # Mapping outcome names back to user's requested values for final calculation
-    value_map = {
-        "perfect": 0.90,
-        "near_perfect": 0.88,
-        "partial": 0.75,
-        "cautious": 0.50,
-        "missed_bug": 0.30,
-        "false_positive": 0.15,
-        "catastrophic": 0.10
-    }
+    history = state.get("history", [])
+    step_outcomes = state.get("step_outcomes", [])
+    task_type = state.get("task_type", "easy")
     
-    step_scores = [value_map.get(o, 0.50) for o in outcomes]
-    base_avg = sum(step_scores) / len(step_scores) if step_scores else 0.1
-
-    # 2. Penalties
+    # Calculate raw scores based on trajectory outcomes
+    # value_map: perfect=0.9, near_perfect=0.8, mixed=0.5, fail=0.2, catastrophic=0.05
+    scores = []
+    for outcome in step_outcomes:
+        if outcome == "perfect": scores.append(0.90)
+        elif outcome == "near_perfect": scores.append(0.80)
+        elif outcome == "partial": scores.append(0.50)
+        elif outcome == "missed_bug": scores.append(0.25)
+        elif outcome == "false_positive": scores.append(0.15)
+        elif outcome == "catastrophic": scores.append(0.05)
+        else: scores.append(0.10) # default small non-zero
+        
+    base_avg = sum(scores) / len(scores) if scores else 0.50
+    
+    # Trajectory Modifiers (Penalties/Bonuses)
     penalties = 0.0
-    
-    # Approve Bug Penalty (Catastrophic)
-    cat_count = outcomes.count("catastrophic")
-    if cat_count > 0:
-        p_val = {"easy": 0.40, "medium": 0.50, "hard": 0.60}.get(task_type, 0.40)
-        penalties += min(0.45, cat_count * p_val) # Cap at 0.45
-        
-    # Missed Bug Penalty
-    missed_count = outcomes.count("missed_bug")
-    penalties += min(0.20, missed_count * 0.05)
-    
-    # False Positive Penalty
-    fp_count = outcomes.count("false_positive")
-    penalties += min(0.10, fp_count * 0.02)
-    
-    # 3. Bonuses
     bonuses = 0.0
-    correct_count = outcomes.count("perfect") + outcomes.count("near_perfect")
-    correct_ratio = correct_count / step_count if step_count > 0 else 0
     
-    # Consistency Bonus (>= 80% correct)
-    if correct_ratio >= 0.8:
-        bonuses += {"easy": 0.05, "medium": 0.10, "hard": 0.15}.get(task_type, 0.05)
+    # "Approve Bug" Penalty (Catastrophic)
+    catastrophic_count = step_outcomes.count("catastrophic")
+    if catastrophic_count > 0:
+        penalties += min(0.40, catastrophic_count * 0.40)
         
-    # Explanation Bonus (>= 80% perfect)
-    perfect_ratio = outcomes.count("perfect") / step_count if step_count > 0 else 0
-    if perfect_ratio >= 0.8:
-        bonuses += {"medium": 0.01, "hard": 0.04}.get(task_type, 0.0)
-
-    # 4. Final Aggregation
-    final_score = base_avg - penalties + bonuses
-    final_score = max(0.01, min(0.99, final_score))
-
-    # All metrics must be strictly in (0, 1) — never exactly 0.0 or 1.0!
+    # Consistency Bonus
+    if len(step_outcomes) >= 2 and step_outcomes.count("perfect") + step_outcomes.count("near_perfect") >= len(step_outcomes) * 0.8:
+        bonuses += 0.10
+        
+    raw_score = base_avg - penalties + bonuses
+    
+    # OpenEnv requirement: scores must be strictly in (0.0, 1.0)
+    # Using the reference pattern: round(min(max(raw_score, 0.01), 0.99), 3)
     return {
-        "cost":            round(max(0.01, min(0.99, 1.0 - (step_count / 10.0))), 4),
+        "score":           round(min(max(raw_score, 0.01), 0.99), 3),
+        "cost":            round(min(max(1.0 - (len(step_outcomes)/10.0), 0.01), 0.99), 3),
         "temperature":     0.5,
         "grid_response":   0.9,
         "batch_deadlines": 0.99,
-        "carbon":          0.05,
-        "score":           round(max(0.01, min(0.99, final_score)), 4) # Renamed to score
+        "carbon":          0.05
     }
+
+# ---------------------------------------------------------------------------
+# Discrete Task-Specific Graders (Discovery Aliases)
+# ---------------------------------------------------------------------------
+
+def GradeSpam(state: dict) -> dict:
+    """Explicit grader for Spam Detection tasks."""
+    return GradeEpisode(state)
+
+def GradeCategory(state: dict) -> dict:
+    """Explicit grader for Category Classification tasks."""
+    return GradeEpisode(state)
+
+def GradeFull(state: dict) -> dict:
+    """Explicit grader for Full Pipeline tasks."""
+    return GradeEpisode(state)
+
+
+# Legacy Logic Helpers (for step rewards)
+def grade_reply_task(content: str) -> float:
+    # Basic quality check for intermediate rewards
+    if not content or len(content) < 10: return 0.2
+    if "thank" in content.lower() or "noted" in content.lower(): return 0.9
+    return 0.5

@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from typing import Optional
 import gradio as gr
 from env import EmailEnv
-from graders import GradeEpisode
+from graders import GradeEpisode, GradeSpam, GradeCategory, GradeFull
 from models import Action, EnvResult, EpisodeGrade
 import uvicorn
 from ui import demo

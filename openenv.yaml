@@ -43,8 +43,14 @@ tasks:
         range: [0.01, 0.99]
 
 graders:
-  - id: "GradeEpisode"
-    name: "Standard Episode Grader"
+  - id: "GradeSpam"
+    name: "Spam Detection Grader"
+    type: "state_based"
+  - id: "GradeCategory"
+    name: "Category Grader"
+    type: "state_based"
+  - id: "GradeFull"
+    name: "Full Pipeline Grader"
     type: "state_based"
 
 environment:
