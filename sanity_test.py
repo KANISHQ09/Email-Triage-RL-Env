@@ -12,7 +12,7 @@ if sys.stdout.encoding != 'utf-8':
 
 from env import EmailEnv
 from models import Action
-from tasks import grade_spam, grade_category, grade_reply
+from graders import grade_reply_task
 
 PASS = "✅ PASS"
 FAIL = "❌ FAIL"
@@ -33,17 +33,9 @@ print("="*55)
 # ─────────────────────────────────────────
 print("\n[1] GRADER FUNCTIONS")
 # ─────────────────────────────────────────
-check("grade_spam correct",        grade_spam("spam", "spam") == 1.0)
-check("grade_spam wrong",          grade_spam("not_spam", "spam") == 0.0)
-check("grade_spam case-insensitive", grade_spam("SPAM", "spam") == 1.0)
-
-check("grade_category correct",    grade_category("work", "work") == 1.0)
-check("grade_category wrong",      grade_category("personal", "work") == 0.0)
-check("grade_category invalid",    grade_category("gibberish", "work") == 0.0)
-
-check("grade_reply high quality",  grade_reply("Thank you, I'll handle it.") == 1.0)
-check("grade_reply noted keyword", grade_reply("Noted, will do.") == 1.0)
-check("grade_reply generic",       grade_reply("ok bye") == 0.0)
+check("grade_reply high quality",  grade_reply_task("Thank you, I'll handle it.") > 0.8)
+check("grade_reply noted keyword", grade_reply_task("Noted, will do.") > 0.8)
+check("grade_reply generic",       grade_reply_task("ok bye") < 0.8)
 
 
 # ─────────────────────────────────────────

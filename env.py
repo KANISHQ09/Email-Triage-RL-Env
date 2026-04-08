@@ -35,15 +35,15 @@ class EmailEnv:
         self.task_type = "easy"
         self.cumulative_reward = 0.1
         self.step_outcomes = [] # To track Perfect/Near-Perfect/Catastrophic/etc.
-    def reset(self):
+    def reset(self, task_type=None):
         """Standard OpenEnv Reset: Returns EnvResult."""
         self.current_email = random.choice(emails)
         self.history = []
         self.messages = [
-            Message(category="SYSTEM", content=f"Task: Triage this email. Difficulty: {self.task_type}")
+            Message(category="SYSTEM", content=f"Task: Triage this email. Difficulty: {task_type or self.task_type}")
         ]
         self.step_count = 0
-        self.task_type = random.choice(["easy", "medium", "hard"])
+        self.task_type = task_type if task_type else random.choice(["easy", "medium", "hard"])
         self.max_steps = len(self.TASK_STEPS[self.task_type])
         self.cumulative_reward = 0.1
         self.step_outcomes = []

@@ -78,21 +78,20 @@ def parse_full_response(text: str) -> dict:
 
 
 # --- Main Inference Loop ---
-def main():
-    env = EmailEnv()
+def run_task(env: EmailEnv, requested_task_type: str):
     rewards: List[float] = []
     step_count = 0
     success = False
     error_msg = "null"
 
     # 1. [START] line
-    print(f"[START] task={TASK_NAME} env={BENCHMARK} model={MODEL_NAME}")
+    print(f"[START] task={TASK_NAME}_{requested_task_type} env={BENCHMARK} model={MODEL_NAME}")
 
     try:
-        # Reset Env
-        result = env.reset()
+        # Reset Env with specific task type
+        result = env.reset(task_type=requested_task_type)
         obs = result.observation
-        task_type = result.info.get("task_type", "easy")
+        task_type = result.info.get("task_type", requested_task_type)
         
         # Decide Actions
         if task_type == "hard":
@@ -140,6 +139,15 @@ def main():
         # 3. [END] line (Exactly one space, remove 'score')
         rewards_str = ",".join([f"{r:.2f}" for r in rewards])
         print(f"[END] success={str(success).lower()} steps={step_count} rewards={rewards_str}")
+
+
+# --- Main Inference Loop ---
+def main():
+    env = EmailEnv()
+    try:
+        for task_type in ["easy", "medium", "hard"]:
+            run_task(env, task_type)
+    finally:
         if hasattr(env, "close"):
             env.close()
 
