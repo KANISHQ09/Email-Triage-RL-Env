@@ -1,6 +1,6 @@
 from models import Action, Observation, EnvResult, Message
 from emails import emails
-from graders import grade_spam_task, grade_category_task, grade_reply_task
+from graders import GradeEpisode, grade_reply_task
 
 
 import random
@@ -101,7 +101,7 @@ class EmailEnv:
                 step_reward = 0.75
                 
         elif action.action_type == "reply":
-            from graders import grade_reply_task
+            # using global grade_reply_task
             if grade_reply_task(action.content) > 0.8:
                 outcome = "perfect"
                 step_reward = 0.90
