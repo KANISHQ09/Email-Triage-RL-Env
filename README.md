@@ -24,9 +24,9 @@ python_version: "3.11"
 
 | Task | Difficulty | Actions | Max Reward |
 |------|-----------|---------|-----------|
-| Spam Detection | 🟢 Easy | `classify` | 0.4 |
-| Category Classification | 🟡 Medium | `classify` + `categorize` | 0.7 |
-| Full Decision Pipeline | 🔴 Hard | `classify` + `categorize` + `reply` | 1.0 |
+| Spam Detection | 🟢 Easy | `classify` | 1 |
+| Category Classification | 🟡 Medium | `classify` + `categorize` | 2 |
+| Full Decision Pipeline | 🔴 Hard | `classify` + `categorize` + `reply` | 3 |
 
 ---
 
@@ -34,7 +34,7 @@ python_version: "3.11"
 
 - **Real-world use case** — Email spam detection, topic classification, and professional reply generation
 - **Multi-step decision making** — Agent takes sequential actions (up to 3 steps per episode)
-- **Reward shaping** — Normalized reward between `0.0` and `1.0`, weighted per action type
+- **Reward isolation** — Strict integer reward (`1` or `0`) for each independent step
 - **Task difficulty sampling** — Each episode randomly selects `easy`, `medium`, or `hard`
 - **Pluggable LLM backend** — Works with any OpenAI-compatible API (HuggingFace, OpenRouter, etc.)
 
@@ -117,17 +117,17 @@ print(result["done"])               # True when episode ends
 
 ---
 
-## 🏆 Reward Design
+## 🏆 Task Evaluation
 
-Rewards are **additive and normalized** to the range `[0.0, 1.0]`:
+Rewards are **strict integers**, evaluating each action independently:
 
-| Action | Correct | Partial | Wrong |
-|--------|---------|---------|-------|
-| `classify` | +0.4 | — | 0.0 |
-| `categorize` | +0.3 | +0.15 | 0.0 |
-| `reply` | +0.3 | +0.15 | — |
+| Task (`Action`) | Correct | Wrong |
+|----------------|---------|-------|
+| Spam Detection (`classify`) | +1 | 0 |
+| Categorization (`categorize`) | +1 | 0 |
+| Professional Reply (`reply`) | +1 | 0 |
 
-**Total max reward = 1.0** ✅
+**Total max reward = 3 (for hard tasks)** ✅
 
 ---
 
@@ -139,7 +139,7 @@ Rewards are **additive and normalized** to the range `[0.0, 1.0]`:
 
 ### 🟡 Medium — Spam + Category
 - Agent classifies spam and categorizes into `work`, `personal`, or `promotion`
-- Partial credit for valid-but-wrong categories
+- Strict evaluation explicitly separating categorizations
 
 ### 🔴 Hard — Full Pipeline
 - Agent classifies, categorizes, AND writes a professional reply
@@ -177,10 +177,10 @@ openenv push --repo-id your-username/email-env
 ```
 [START] task=email_triage env=openenv model=gpt-4.1-mini
 [INFO]  email_id=4 task_type=hard steps=['classify', 'categorize', 'reply']
-[STEP]  step=1 action_type=classify content="not_spam" reward=0.40 done=false error=null
-[STEP]  step=2 action_type=categorize content="work" reward=0.30 done=false error=null
-[STEP]  step=3 action_type=reply content="Thank you for the alert. I'll look into it immediately." reward=0.30 done=true error=null
-[END]   success=true steps=3 total_reward=1.00 rewards=[0.40,0.30,0.30]
+[STEP]  step=1 action_type=classify content="not_spam" reward=1 done=false error=null
+[STEP]  step=2 action_type=categorize content="work" reward=1 done=false error=null
+[STEP]  step=3 action_type=reply content="Thank you for the alert. I'll look into it immediately." reward=1 done=true error=null
+[END]   success=true steps=3 total_reward=3 rewards=[1,1,1]
 ```
 
 ---
@@ -188,7 +188,7 @@ openenv push --repo-id your-username/email-env
 ## ✅ Validation Checklist
 
 - [x] 3 tasks implemented (easy / medium / hard)
-- [x] Reward between 0.0 and 1.0
+- [x] Strict boolean integer evaluation points
 - [x] Inference logs in correct format
 - [x] Multi-step environment (up to 3 steps)
 - [x] Docker builds with `--no-cache-dir`
