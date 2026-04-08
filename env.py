@@ -1,8 +1,9 @@
-import random
 from models import Action, Observation, EnvResult, Message
 from emails import emails
-from tasks import grade_spam, grade_category, grade_reply
+from graders import grade_spam_task, grade_category_task, grade_reply_task
 
+
+import random
 
 class EmailEnv:
     """
@@ -32,7 +33,8 @@ class EmailEnv:
         self.step_count = 0
         self.max_steps = 3
         self.task_type = "easy"
-        self.cumulative_reward = 0.01
+        self.cumulative_reward = 0.1
+        self.step_outcomes = [] # To track Perfect/Near-Perfect/Catastrophic/etc.
     def reset(self):
         """Standard OpenEnv Reset: Returns EnvResult."""
         self.current_email = random.choice(emails)
@@ -43,7 +45,8 @@ class EmailEnv:
         self.step_count = 0
         self.task_type = random.choice(["easy", "medium", "hard"])
         self.max_steps = len(self.TASK_STEPS[self.task_type])
-        self.cumulative_reward = 0.01
+        self.cumulative_reward = 0.1
+        self.step_outcomes = []
 
         obs = Observation(
             email_id=self.current_email["id"],
@@ -55,7 +58,7 @@ class EmailEnv:
         )
         return EnvResult(
             observation=obs,
-            reward=0.01,
+            reward=0.1,  # Initial reward (strictly > 0)
             done=False,
             info={
                 "task_type": self.task_type,
@@ -65,27 +68,57 @@ class EmailEnv:
 
     def step(self, action: Action):
         """Standard OpenEnv Step: Returns EnvResult."""
-        reward = 0.0
-
-        # --- Strict binary reward per action ---
+        # PER USER REQUEST: [STEP] rewards are per-step normalized rewards, not comparison-based
+        # We also track the specific outcome category for the trajectory grader
+        outcome = "partial" # default
+        
+        is_spam = self.current_email["label"] == "spam"
+        
         if action.action_type == "classify":
-            reward += grade_spam(action.content, self.current_email["label"])
-
+            pred = action.content.strip().lower()
+            actual = self.current_email["label"].strip().lower()
+            if pred == "not_spam" and is_spam:
+                outcome = "catastrophic" # Approved bug
+                step_reward = 0.10
+            elif pred == "spam" and not is_spam:
+                outcome = "false_positive"
+                step_reward = 0.15
+            elif pred == actual:
+                outcome = "near_perfect"
+                step_reward = 0.88
+            else:
+                outcome = "missed_bug" if is_spam else "partial"
+                step_reward = 0.30 if is_spam else 0.50
+        
         elif action.action_type == "categorize":
-            reward += grade_category(action.content, self.current_email["category"])
-
+            # Assume severity check maps to categorization
+            if action.content.strip().lower() == self.current_email["category"].strip().lower():
+                outcome = "perfect" # Upgrading from near-perfect if classification was also right
+                step_reward = 0.90
+            else:
+                outcome = "partial"
+                step_reward = 0.75
+                
         elif action.action_type == "reply":
-            reward += grade_reply(action.content)
+            from graders import grade_reply_task
+            if grade_reply_task(action.content) > 0.8:
+                outcome = "perfect"
+                step_reward = 0.90
+            else:
+                outcome = "partial"
+                step_reward = 0.70
 
-        # Clamp reward to strict (0, 1) range
-        reward = max(0.01, min(0.99, float(reward)))
-        self.cumulative_reward = max(0.01, min(0.99, self.cumulative_reward + reward))
+        self.step_outcomes.append(outcome)
+        self.cumulative_reward += step_reward
         self.step_count += 1
+        
+        # Ensure total never exceeds 0.99
+        self.cumulative_reward = min(0.99, self.cumulative_reward)
         
         # Track history for context
         self.history.append(f"[{action.action_type}] {action.content}")
         self.messages.append(Message(category="USER", content=f"{action.action_type}: {action.content}"))
-        self.messages.append(Message(category="ENVIRONMENT", content=f"Feedback: Action recorded. Reward gained: {reward:.2f}"))
+        self.messages.append(Message(category="ENVIRONMENT", content=f"Feedback: Action recorded. Reward gained: {step_reward:.2f}"))
 
         self.done = self.step_count >= self.max_steps
 
@@ -117,16 +150,19 @@ class EmailEnv:
 
         return EnvResult(
             observation=obs,
-            reward=round(reward, 4),
+            reward=round(step_reward, 4),
             done=self.done,
-            info=info_dict # 3. Return the updated info_dict
+            info=info_dict
         )
 
     def state(self):
         """Oracle State for Learning."""
         return {
             "email": self.current_email,
+            "history": self.history,
             "step_count": self.step_count,
             "cumulative_reward": self.cumulative_reward,
+            "step_outcomes": self.step_outcomes,
+            "task_type": self.task_type,
             "done": getattr(self, "done", False)
         }

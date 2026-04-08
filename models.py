@@ -27,3 +27,12 @@ class EnvResult(BaseModel):
     reward: float = 0.0
     done: bool = False
     info: dict = {}
+
+
+class EpisodeGrade(BaseModel):
+    cost: float
+    temperature: float
+    grid_response: float
+    batch_deadlines: float
+    carbon: float
+    final_score: float

@@ -5,10 +5,10 @@ from pydantic import BaseModel
 from typing import Optional
 import gradio as gr
 from env import EmailEnv
-from models import Action, EnvResult
-from tasks import grade_spam, grade_category, grade_reply
+from graders import GradeEpisode
+from models import Action, EnvResult, EpisodeGrade
 import uvicorn
-from ui import demo  # Import the Gradio demo object
+from ui import demo
 
 app = FastAPI(title="Email Triage RL Environment - OpenEnv API")
 
@@ -64,17 +64,17 @@ TASKS = [
         "difficulty": "easy",
         "description": "Classify email as spam or not_spam",
         "action_type": "classify",
-        "grader": "tasks.grade_spam",
-        "score": 0.4,
+        "grader": "GradeEpisode",
+        "score": 0.85,
     },
     {
         "id": "category_classification",
         "name": "Category Classification",
         "difficulty": "medium",
-        "description": "Classify + categorize email (work / personal / promotion)",
+        "description": "Classify + categorize email",
         "action_types": ["classify", "categorize"],
-        "grader": "tasks.grade_category",
-        "score": 0.7,
+        "grader": "GradeEpisode",
+        "score": 0.85,
     },
     {
         "id": "full_decision",
@@ -82,8 +82,8 @@ TASKS = [
         "difficulty": "hard",
         "description": "Full pipeline — classify, categorize, and reply",
         "action_types": ["classify", "categorize", "reply"],
-        "grader": "tasks.grade_reply",
-        "score": 0.99,
+        "grader": "GradeEpisode",
+        "score": 0.85,
     },
 ]
 
@@ -94,34 +94,23 @@ def list_tasks():
     return {"tasks": TASKS}
 
 
-class GradeRequest(BaseModel):
-    task_name: str
-    prediction: str
-    ground_truth: Optional[str] = ""
+@app.get("/graders")
+def list_graders():
+    """List all available graders for discovery."""
+    return {
+        "graders": [
+            {"id": "GradeEpisode", "type": "state_based"},
+        ]
+    }
 
 
-@app.post("/grade")
-def grade(request: GradeRequest):
+@app.post("/grade", response_model=EpisodeGrade)
+def grade_episode(state_data: dict):
     """
-    Run the grader for a given task and return a score strictly in (0, 1).
-    Scores are always in the open interval — never 0.0 or 1.0.
+    Grades an episode based on the full state/replay data.
     """
-    task_name = request.task_name
-    prediction = request.prediction
-    ground_truth = request.ground_truth
-
-    if task_name == "spam_detection":
-        score = grade_spam(prediction, ground_truth)
-    elif task_name == "category_classification":
-        score = grade_category(prediction, ground_truth)
-    elif task_name == "full_decision":
-        score = grade_reply(prediction)
-    else:
-        return {"error": f"Unknown task: {task_name}", "score": None}
-
-    # Clamp to strict open interval (0, 1) — never exactly 0.0 or 1.0
-    score = max(0.01, min(0.99, float(score)))
-    return {"task": task_name, "score": score}
+    grade_dict = GradeEpisode(state_data)
+    return EpisodeGrade(**grade_dict)
 
 # Mount the Gradio UI at /ui to avoid route collision with the REST API at root
 app = gr.mount_gradio_app(app, demo, path="/ui")
